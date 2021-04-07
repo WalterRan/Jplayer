@@ -1,7 +1,9 @@
 from threading import Thread
 import os
 import time
+import logging
 
+LOG = logging.getLogger(__name__)
 scan_idle = 3
 disk_path='/'
 directory = "/home/"

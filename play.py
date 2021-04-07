@@ -10,6 +10,7 @@ import termios
 import tty
 import media_list
 import nfs
+import logging
 
 from pynput import keyboard
 from flask import Flask
@@ -17,18 +18,27 @@ from threading import Thread
 
 # @ -------- DEPENDENCY --------
 """
-pip3 install python-vlc
-pip3 install pynput
-pip3 install flask
-pip3 install python-xlib
-pip3 install system_hotkey
-
 yum install kernel-headers-$(uname -r) -y
 yum install gcc -y
-yum install python-devel
+yum install python-devel -y
+yum install python3-pip -y
+yum install python3-devel -y
+
+pip3 install python-vlc pynput flask python-xlib system_hotkey prettytable pymysql sqlalchemy
+
+yum install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm -y
+yum install https://download1.rpmfusion.org/free/el/rpmfusion-free-release-7.noarch.rpm -y
+yum info vlc
+yum install vlc -y
 
 sed -i 's/geteuid/getppid/' /usr/bin/vlc
 """
+
+# @ -------- LOGGING --------
+logging.basicConfig(filename='/etc/jplayer/jplayer.log',
+                    format='%(asctime)s %(name)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S',
+                    level=logging.DEBUG)
+LOG = logging.getLogger(__name__)
 
 # @ -------- GLOBAL --------
 media_player = None
@@ -106,50 +116,55 @@ def web_server():
 
 # @ -------- WHAT --------
 def _play(video):
-    print('playing: %s', video)
+    try:
+        LOG.debug('playing media `%s`', video)
 
-    global media_player
-    global jump
-    jump = False
+        global media_player
+        global jump
+        jump = False
 
-    # creating Instance class object 
-    player = vlc.Instance()
+        # creating Instance class object
+        player = vlc.Instance()
 
-    # creating a new media 
-    media = player.media_new(video)
+        # creating a new media
+        media = player.media_new(video)
 
-    # creating a media player object 
-    media_player = player.media_player_new()
+        # creating a media player object
+        media_player = player.media_player_new()
 
-    media_player.set_media(media)
+        media_player.set_media(media)
 
-    media_player.set_video_title_display(3, 8000)
+        media_player.set_video_title_display(3, 8000)
 
-    media_player.set_fullscreen(True)
+        media_player.set_fullscreen(True)
 
-    # start playing video 
-    media_player.play()
-    time.sleep(1)
-    duration = 1000
-    mv_length = media_player.get_length() - 1000
-    print(str(mv_length / 1000) + "s")
-
-    while duration < mv_length:
+        # start playing video
+        media_player.play()
         time.sleep(1)
-        duration = duration + 1000
-        status = media_player.get_state()
+        duration = 1000
+        mv_length = media_player.get_length() - 1000
+        LOG.debug(str(mv_length / 1000) + "s")
 
-        # print(status)
-        if media_player.get_state() != vlc.State.Playing:
-            media_player.stop()
-            return
+        while duration < mv_length:
+            time.sleep(1)
+            duration = duration + 1000
+            status = media_player.get_state()
 
-    media_player.stop()
+            # LOG.debug(status)
+            if media_player.get_state() != vlc.State.Playing:
+                media_player.stop()
+                return
+
+        media_player.stop()
+
+    except Exception:
+        LOG.error('got exception when playing %s', video, exc_info=True)
+
     return
 
 
 def test_for_database():
-    print('in test')
+    LOG.debug('in test')
     # Test
     import random
 
@@ -170,22 +185,23 @@ def test_for_database():
 
     list_all = m.get_list_all()
     for one in list_all:
-        # print('-' * 20)
+        # LOG.debug('-' * 20)
         m.show_info(one)
-        # print(one.name)
+        # LOG.debug(one.name)
         m.delete_by_id(one.id)
 
 
-if __name__ == '__main__':
+def main():
     # start with config
     nfs_local_path = "/home/pi/Desktop/nfs"
     config_file = "./config.ini"
+    LOG.debug('main start with config_file %s nfs_local_path %s', config_file, nfs_local_path)
 
     # 1. get nfs list
     nfs_instance = nfs.Nfs(nfs_local_path, config_file)
     nfs_instance.mount()
     contents = nfs_instance.get_list()
-    print(contents)
+    LOG.debug(contents)
 
     # 2. update database
     m = media_list.MediaList(config_file)
@@ -201,8 +217,8 @@ if __name__ == '__main__':
 
     # Get a random one
     # one = m.get_random()
-    # print('-'*30)
-    # print(one)
+    # LOG.debug('-'*30)
+    # LOG.debug(one)
 
     # 3.5 Start hot_key listener
     t = Thread(target=hotkey_listener)
@@ -215,17 +231,14 @@ if __name__ == '__main__':
     # 4. Play
     while True:
         one = m.get_random()
-        print('--' * 30)
         content = nfs_local_path + one
-        print(content)
 
         if os.path.isfile(content):
-            # print(" It's a file")
+            LOG.debug("going to play media: %s", content)
             _play(content)
 
         elif os.path.isdir(content):
-
-            # print(" It's a directory")
+            LOG.debug("going to directory media: %s", content)
             files = os.listdir(content)
             files.sort()
 
@@ -236,4 +249,8 @@ if __name__ == '__main__':
                 if jump:
                     break
         else:
-            print(" Something error")
+            LOG.debug("`%s` is not a file nor a directory.", content)
+
+
+if __name__ == '__main__':
+    main()

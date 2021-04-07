@@ -5,9 +5,10 @@ import sqlalchemy as sa
 from prettytable import PrettyTable
 import random
 from configparser import ConfigParser
+import logging
 
+LOG = logging.getLogger(__name__)
 # sa.Column, sa.String, sa.create_engine
-
 Base = declarative_base()
 
 """
@@ -50,7 +51,7 @@ class MediaListDB(Base):
 
 class MediaList(object):
     def __init__(self, config_file):
-        print('MediaList init start')
+        LOG.debug('MediaList init start')
 
         cfg = ConfigParser()
         cfg.read(config_file)
@@ -64,7 +65,7 @@ class MediaList(object):
 
         # self.connection = 'mysql+pymysql://root@127.0.0.1/Jplayer'
         connection = 'mysql+pymysql://' + username + '@' + server_ip + '/' + db_name
-        print('connection = ', connection)
+        LOG.debug('connection = %s', connection)
         engine = create_engine(connection)
         db_session = sessionmaker(bind=engine)
         self.session = db_session()
@@ -154,7 +155,7 @@ class MediaList(object):
                 media.jumped,
                 media.path[:70],
             ])
-        print(table)
+        LOG.debug(table)
 
     def get_random(self):
         medias = self.get_list_all()
@@ -164,9 +165,8 @@ class MediaList(object):
             for i in range(media.priority):
                 all_media.append(media.path)
 
-        print(len(medias))
-        print(len(all_media))
+        LOG.debug('unfold media %d to medias %d', len(medias), len(all_media))
         r = random.randint(0, len(all_media))
-        print(all_media[r])
+        LOG.debug('pick a random one `%s`', all_media[r])
 
         return all_media[r]
