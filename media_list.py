@@ -170,3 +170,17 @@ class MediaList(object):
         LOG.debug('pick a random one `%s`', all_media[r])
 
         return all_media[r]
+
+    def get_name_by_path(self, media_path):
+        media = self.session.query(MediaListDB).filter_by(path=media_path).one_or_none()
+        if media:
+            return media.name
+
+    def find_new_to_add(self, contents):
+        for content in contents:
+            vid = self.get_id_by_path(content)
+            if vid:
+                pass
+            else:
+                self.create(path=content)
+
