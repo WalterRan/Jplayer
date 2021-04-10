@@ -1,16 +1,10 @@
 import os
-import syslog
-import random
 import time
-import getopt
-import sys
 import vlc
-import functools
-import termios
-import tty
 import media_list
 import nfs
 import logging
+from player import player
 
 from pynput import keyboard
 from flask import Flask
@@ -35,7 +29,7 @@ sed -i 's/geteuid/getppid/' /usr/bin/vlc
 """
 
 # @ -------- LOGGING --------
-logging.basicConfig(filename='/etc/jplayer/jplayer.log',
+logging.basicConfig(filename='/var/log/jplayer/jplayer.log',
                     format='%(asctime)s %(name)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S',
                     level=logging.DEBUG)
 LOG = logging.getLogger(__name__)
@@ -67,10 +61,9 @@ current = set()
 
 
 def execute():
-    global media_player
     global jump
     jump = True
-    media_player.stop()
+    player.stop()
 
 
 def on_press(key):
@@ -191,6 +184,13 @@ def test_for_database():
         m.delete_by_id(one.id)
 
 
+def temp_play(file_name):
+    player.play(file_name)
+    time.sleep(2)
+    while player.is_playing():
+        time.sleep(1)
+
+
 def main():
     # start with config
     nfs_local_path = "/home/pi/Desktop/nfs"
@@ -201,7 +201,7 @@ def main():
     nfs_instance = nfs.Nfs(nfs_local_path, config_file)
     nfs_instance.mount()
     contents = nfs_instance.get_list()
-    LOG.debug(contents)
+    # LOG.debug(contents)
 
     # 2. update database
     m = media_list.MediaList(config_file)
@@ -213,7 +213,7 @@ def main():
             m.create(path=content)
 
     list_all = m.get_list_all()
-    m.show_info(list_all)
+    # m.show_info(list_all)
 
     # Get a random one
     # one = m.get_random()
@@ -235,7 +235,9 @@ def main():
 
         if os.path.isfile(content):
             LOG.debug("going to play media: %s", content)
-            _play(content)
+            # _play(content)
+            # player.play(content)
+            temp_play(content)
 
         elif os.path.isdir(content):
             LOG.debug("going to directory media: %s", content)
@@ -244,7 +246,9 @@ def main():
 
             for file in files:
                 abs_path = content + "/" + file
-                _play(abs_path)
+                # _play(abs_path)
+                # player.play(abs_path)
+                temp_play(abs_path)
 
                 if jump:
                     break
