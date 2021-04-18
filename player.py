@@ -1,10 +1,9 @@
+import logging_adaptor as logging
+
 import os
 import vlc
-import logging
 import time
 
-# TODO: cannot init correctly if not call from play.py
-# logging.basicConfig(level=logging.DEBUG)
 LOG = logging.getLogger(__name__)
 
 
@@ -94,7 +93,6 @@ class Player:
 
     def remove_callback(self, event_type, callback):
         self.media.event_manager().event_detach(event_type, callback)
-
 
     def set_video_title_display(self):
         self.media.set_video_title_display(3, 8000)

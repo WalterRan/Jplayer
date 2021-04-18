@@ -1,7 +1,7 @@
 from threading import Thread
 import os
 import time
-import logging
+import logging_adaptor as logging
 
 LOG = logging.getLogger(__name__)
 scan_idle = 3

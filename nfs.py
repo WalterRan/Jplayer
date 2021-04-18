@@ -1,6 +1,6 @@
 import os
 import time
-import logging
+import logging_adaptor as logging
 
 from configparser import ConfigParser
 from prettytable import PrettyTable

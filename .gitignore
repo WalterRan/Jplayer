@@ -2,3 +2,6 @@
 .idea
 __pycache__
 venv
+*.log
+vlc.py
+*.avi

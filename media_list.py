@@ -5,7 +5,7 @@ import sqlalchemy as sa
 from prettytable import PrettyTable
 import random
 from configparser import ConfigParser
-import logging
+import logging_adaptor as logging
 
 LOG = logging.getLogger(__name__)
 # sa.Column, sa.String, sa.create_engine

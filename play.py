@@ -1,7 +1,7 @@
+import logging_adaptor as logging
 import os
 import media_list
 import nfs
-import logging
 from player import player
 from flask import Flask
 from threading import Thread
@@ -9,9 +9,6 @@ from HotKey import hotkey
 
 
 # @ -------- LOGGING --------
-logging.basicConfig(filename='./jplayer.log',
-                    format='%(asctime)s %(name)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S',
-                    level=logging.DEBUG)
 LOG = logging.getLogger(__name__)
 
 # @ -------- GLOBAL --------

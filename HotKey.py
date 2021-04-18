@@ -1,6 +1,6 @@
 from pynput import keyboard
 from threading import Thread
-import logging
+import logging_adaptor as logging
 
 
 LOG = logging.getLogger(__name__)
