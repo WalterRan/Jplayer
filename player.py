@@ -3,6 +3,7 @@ import logging_adaptor as logging
 import os
 import vlc
 import time
+import datetime
 
 LOG = logging.getLogger(__name__)
 
@@ -16,11 +17,13 @@ class Player:
         self.uri = None
 
     def test(self):
-        self.play('a.avi')
+        self.play('a.avi', title='testing', fullscreen=False)
 
-    def play(self, media, title=None):
+    def play(self, media, title=None, fullscreen=True):
         if media:
-            self.set_fullscreen()
+            if fullscreen:
+                self.set_fullscreen()
+
             self.set_marquee()
             title = title or os.path.splitext(os.path.basename(media))[0]
             self.update_text(title)
@@ -34,10 +37,11 @@ class Player:
         if uri:
             self.uri = uri
             self.media.set_mrl(uri)
-            LOG.debug('%s', str(self.media.get_length()))
             # self.add_callback(vlc.EventType.MediaPlayerEndReached, self.release)
             # self.add_callback(265, self.stop())
-            return self.media.play()
+            self.media.play()
+            time.sleep(1)
+            LOG.debug('media total length %s', self.get_length())
 
     def pause(self):
         self.media.pause()
@@ -65,7 +69,8 @@ class Player:
         return self.media.set_time()
 
     def get_length(self):
-        return self.media.get_length()
+        total_seconds = self.media.get_length() / 1000
+        return str(datetime.timedelta(seconds=total_seconds))
 
     def get_state(self):
         state = self.media.get_state()
