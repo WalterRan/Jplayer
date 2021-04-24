@@ -118,27 +118,31 @@ def play():
 
 
 def main():
-    LOG.debug('main start with config_file %s nfs_local_path %s', config_file, nfs_local_path)
+    try:
+        LOG.debug('main start with config_file %s nfs_local_path %s', config_file, nfs_local_path)
 
-    # 1. get nfs list
-    nfs_instance = nfs.Nfs(nfs_local_path, config_file)
-    nfs_instance.mount()
-    contents = nfs_instance.get_list()
-    # LOG.debug(contents)
+        # 1. get nfs list
+        nfs_instance = nfs.Nfs(nfs_local_path, config_file)
+        nfs_instance.mount()
+        contents = nfs_instance.get_list()
+        # LOG.debug(contents)
 
-    # 2. update database
-    m = media_list.MediaList(config_file)
-    m.find_new_to_add(contents)
+        # 2. update database
+        m = media_list.MediaList(config_file)
+        m.find_new_to_add(contents)
 
-    # 3. bind hotkey
-    hotkey.bind('q', hotkey_jump)
+        # 3. bind hotkey
+        hotkey.bind('q', hotkey_jump)
 
-    # 4. Start web interface
-    t2 = Thread(target=web_server)
-    t2.start()
+        # 4. Start web interface
+        t2 = Thread(target=web_server)
+        t2.start()
 
-    # 5. Play
-    play()
+        # 5. Play
+        play()
+
+    except:
+        LOG.exception("Somethin error")
 
 
 if __name__ == '__main__':
