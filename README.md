@@ -11,9 +11,8 @@ yum install gcc -y
 yum install python-devel -y
 yum install python3-pip -y
 yum install python3-devel -y
-yum install python-alembic -y
 
-pip3 install python-vlc pynput flask python-xlib system_hotkey prettytable pymysql sqlalchemy
+pip3 install python-vlc pynput flask python-xlib system_hotkey prettytable pymysql sqlalchemy alembic
 
 yum install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm -y
 yum install https://download1.rpmfusion.org/free/el/rpmfusion-free-release-7.noarch.rpm -y

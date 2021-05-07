@@ -114,7 +114,7 @@ def play():
                     jump = False
                     break
         else:
-            LOG.debug("`%s` is not a file nor a directory.", content)
+            LOG.warning("`%s` is not a file nor a directory.", content)
 
 
 def main():
