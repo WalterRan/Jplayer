@@ -12,28 +12,8 @@ LOG = logging.getLogger(__name__)
 Base = declarative_base()
 
 """
-pip3 install PyMySQL
-pip3 install sqlalchemy
-pip3 install prettytable
+create database sparrow_player;
 """
-
-"""
-create database Jplayer;
-"""
-
-"""
-CREATE TABLE `media_list` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(255),
-  `path` varchar(255) NOT NULL,
-  `priority` int(10) unsigned NOT NULL,
-  `played` int(10) unsigned NOT NULL,
-  `failed` int(10) unsigned NOT NULL,
-  `jumped` int(10) unsigned NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-"""
-
 
 class MediaListDB(Base):
     __table_args__ = {'mysql_engine': 'InnoDB'}
@@ -63,7 +43,6 @@ class MediaList(object):
         db_name = cs.get('db_name')
         # password = cs.get('password')
 
-        # self.connection = 'mysql+pymysql://root@127.0.0.1/Jplayer'
         connection = 'mysql+pymysql://' + username + '@' + server_ip + '/' + db_name
         LOG.debug('connection = %s', connection)
         engine = create_engine(connection)

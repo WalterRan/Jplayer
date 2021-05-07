@@ -3,7 +3,7 @@ pip3 install flask prettytable pymysql pynput python-vlc python-xlib sqlalchemy 
 
 mkdir /home/pi/Desktop/nfs -p
 
-grep -q '@/home/pi/Jplayer/do' /etc/xdg/lxsession/LXDE-pi/autostart || echo '@/home/pi/Jplayer/do' >> /etc/xdg/lxsession/LXDE-pi/autostart
+grep -q '@/home/pi/sparrow_player/do' /etc/xdg/lxsession/LXDE-pi/autostart || echo '@/home/pi/sparrow_player/do' >> /etc/xdg/lxsession/LXDE-pi/autostart
 
 # Run in CentOS
 yum install kernel-headers-$(uname -r) -y

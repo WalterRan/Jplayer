@@ -1,1 +1,1 @@
-kill -9 `ps aux | grep Jplayer | awk {'print $2'}`
+kill -9 `ps aux | grep sparrow_player | awk {'print $2'}`
