@@ -23,4 +23,7 @@ def upgrade():
 
 
 def downgrade():
-    pass
+    conn = op.get_bind()
+
+    conn.execute(sa.sql.text('ALTER table media_list CONVERT TO CHARACTER SET latin1 COLLATE latin1_swedish_ci'))
+
