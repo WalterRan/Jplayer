@@ -20,3 +20,6 @@ yum info vlc
 yum install vlc -y
 
 sed -i 's/geteuid/getppid/' /usr/bin/vlc
+
+# Build rpm
+python3 setup.py bdist_rpm
