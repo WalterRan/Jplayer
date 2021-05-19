@@ -6,3 +6,8 @@ venv
 vlc.py
 *.avi
 *.pyc
+dist
+*egg-info
+build
+AUTHORS
+ChangeLog
