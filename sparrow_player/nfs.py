@@ -1,14 +1,17 @@
+"""module nfs"""
 import os
 import time
-import logging_adaptor as logging
 
 from configparser import ConfigParser
 from prettytable import PrettyTable
 
-LOG = logging.getLogger(__name__)
+import logging_adaptor as logging
+
+LOG = logging.get_logger(__name__)
 
 
-class Nfs(object):
+class Nfs:
+    """class nfs"""
     def __init__(self, local_dir, config_file):
         self.local_dir = local_dir
         LOG.debug('NFS runs in path: %s', self.local_dir)
@@ -16,11 +19,11 @@ class Nfs(object):
         cfg = ConfigParser()
         cfg.read(config_file)
 
-        cs = cfg.__getitem__('nfs')
+        nfs_config = cfg.__getitem__('nfs')
 
-        self.nfs_ip = cs.get('ip')
-        self.nfs_dir = cs.get('dir')
-        self.ignore = cs.get('ignore').replace(" ", "").split(',')
+        self.nfs_ip = nfs_config.get('ip')
+        self.nfs_dir = nfs_config.get('dir')
+        self.ignore = nfs_config.get('ignore').replace(" ", "").split(',')
 
         table = PrettyTable()
         table.add_column('key', ['ip', 'dir', 'ignore'])
@@ -28,10 +31,11 @@ class Nfs(object):
         LOG.debug(table)
 
     def get_list(self):
+        """get list"""
         return self.scan_path()
 
     def mount(self):
-        # Mount nfs
+        """mount nfs"""
         LOG.debug(" Mounting nfs")
 
         if not os.path.isdir(self.local_dir):
@@ -47,6 +51,7 @@ class Nfs(object):
             time.sleep(5)
 
     def scan_path(self):
+        """scan path"""
         # 1. Find the root media directories
         LOG.debug(" Walking in path: %s", self.local_dir)
 

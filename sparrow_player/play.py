@@ -1,66 +1,32 @@
-import logging_adaptor as logging
+"""module play"""
 import os
+
+import logging_adaptor as logging
 import media_list
 import nfs
+import hot_key
 from player import player
-from flask import Flask
-from threading import Thread
-from HotKey import hotkey
 
 
-# @ -------- LOGGING --------
-LOG = logging.getLogger(__name__)
+LOG = logging.get_logger(__name__)
 
 # @ -------- GLOBAL --------
-media_player = None
-jump = False
-nfs_local_path = "/home/pi/Desktop/nfs"
-config_file = "./config.ini"
-
-# @ -------- CONFIG --------
-# run_mode = 'local'
-run_mode = 'remote'
-directory = "/home/"
-debug_mode = False
-nfs_ip = "192.168.0.102"
-nfs_dir = "/media/slot3_4t/media"
-local_dir = "/home/pi/Desktop/nfs"
-
-# @ -------- CONFIG end --------
-
-
-# @ -------- RESTAPI --------
-app = Flask(__name__)
-
-
-@app.route('/')
-def hello_world():
-    return "hello world"
-
-
-@app.route('/title/', methods=['GET'])
-def rest_get_title():
-    return str(player.get_title())
-
-
-# curl --request POST 127.0.0.1:5000/next/
-@app.route('/next/', methods=['POST'])
-def rest_post_next():
-    return str(player.stop())
-
-
-def web_server():
-    app.run()
+# MEDIA_PLAYER = None
+JUMP = False
+NFS_LOCAL_PATH = "/home/pi/Desktop/nfs"
+CONFIG_FILE = "/etc/sparrow-player/config.ini"
 
 
 def hotkey_jump():
+    """hot key"""
     LOG.debug('media play break from hotkey')
-    global jump
-    jump = True
+    global JUMP
+    JUMP = True
     player.stop()
 
 
 def test_for_database():
+    """test for database"""
     LOG.debug('in test')
     # Test
     import random
@@ -89,12 +55,13 @@ def test_for_database():
 
 
 def play():
-    m = media_list.MediaList(config_file)
+    """play"""
+    all_medias = media_list.MediaList(CONFIG_FILE)
 
     while True:
-        one = m.get_random()
-        content = nfs_local_path + one
-        name = m.get_name_by_path(one)
+        one = all_medias.get_random()
+        content = NFS_LOCAL_PATH + one
+        name = all_medias.get_name_by_path(one)
 
         if os.path.isfile(content):
             LOG.debug("going to play media: %s", content)
@@ -105,38 +72,35 @@ def play():
             files = os.listdir(content)
             files.sort()
 
-            for file in files:
-                abs_path = content + "/" + file
+            for file_name in files:
+                abs_path = content + "/" + file_name
                 player.play(abs_path, name)
 
-                global jump
-                if jump:
-                    jump = False
+                global JUMP
+                if JUMP:
+                    JUMP = False
                     break
         else:
             LOG.warning("`%s` is not a file nor a directory.", content)
 
 
 def main():
+    """main"""
     try:
-        LOG.debug('main start with config_file %s nfs_local_path %s', config_file, nfs_local_path)
+        LOG.debug('main start with config_file %s nfs_local_path %s', CONFIG_FILE, NFS_LOCAL_PATH)
 
         # 1. get nfs list
-        nfs_instance = nfs.Nfs(nfs_local_path, config_file)
+        nfs_instance = nfs.Nfs(NFS_LOCAL_PATH, CONFIG_FILE)
         nfs_instance.mount()
         contents = nfs_instance.get_list()
         # LOG.debug(contents)
 
         # 2. update database
-        m = media_list.MediaList(config_file)
-        m.find_new_to_add(contents)
+        all_medias = media_list.MediaList(CONFIG_FILE)
+        all_medias.find_new_to_add(contents)
 
         # 3. bind hotkey
-        hotkey.bind('q', hotkey_jump)
-
-        # 4. Start web interface
-        t2 = Thread(target=web_server)
-        t2.start()
+        hot_key.HotKey().bind('q', hotkey_jump)
 
         # 5. Play
         play()
