@@ -7,27 +7,17 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from prettytable import PrettyTable
-
+from models.media_list import BaseInfo
+from models.media_list import PlayInfo
+from models.media_list import MediaInfo
 import logging_adaptor as logging
 
+
 LOG = logging.get_logger(__name__)
-# sa.Column, sa.String, sa.create_engine
 Base = declarative_base()
 
 
-class MediaListDB(Base):
-    """media list base class"""
-    __table_args__ = {'mysql_engine': 'InnoDB'}
-    __table_initialized__ = False
-    __tablename__ = 'media_list'
-
-    id = sa.Column('id', sa.Integer(), autoincrement=True, nullable=False, primary_key=True)
-    name = sa.Column(sa.String(255), nullable=True)
-    path = sa.Column(sa.String(255), nullable=False)
-    priority = sa.Column('priority', sa.Integer(), nullable=False)
-    played = sa.Column('played', sa.Integer(), nullable=False)
-    failed = sa.Column('failed', sa.Integer(), nullable=False)
-    jumped = sa.Column('jumped', sa.Integer(), nullable=False)
+DEFAULT_PRIORITY = 5
 
 
 class MediaList:
@@ -52,33 +42,46 @@ class MediaList:
         db_session = sessionmaker(bind=engine)
         self.session = db_session()
 
-    def get_list_all(self):
-        """get list all"""
-        list_all = self.session.query(MediaListDB).all()
+    def create(self, path, simple_name='', origin_name='', year=''):
+        with self.session.begin(subtransactions=True):
+            media = BaseInfo(path=path)
+            media.play_info = PlayInfo(priority=DEFAULT_PRIORITY, played=0, finished=0, jumped=0)
+            media.media_info = MediaInfo(simple_name=simple_name, origin_name=origin_name, year=year)
 
-        return list_all
+            self.session.add(media)
+
+    def delete_by_id(self, media_id):
+        """delete by id"""
+        media = self.session.query(BaseInfo).filter_by(id=media_id).one_or_none()
+        if media:
+            self.session.delete(media)
+            self.session.commit()
+        else:
+            raise
 
     def get_id_by_path(self, media_path):
         """get id by path"""
-        media = self.session.query(MediaListDB).filter_by(path=media_path).one_or_none()
+        media = self.session.query(BaseInfo).filter_by(path=media_path).one_or_none()
 
         if media:
             return media.id
 
         return None
 
-    def create(self, path, name=None):
-        """create"""
-        new_list = MediaListDB(path=path, name=name, priority=5, played=0, failed=0, jumped=0)
-        self.session.add(new_list)
-        self.session.commit()
+    # TODO
+    def get_list_all(self):
+        """get list all"""
+        list_all = self.session.query(MediaListDB).all()
 
-    def delete_by_id(self, vid):
-        """delete by id"""
-        media = self.session.query(MediaListDB).filter_by(id=vid).one_or_none()
+        return list_all
+
+    def get_name_by_path(self, media_path):
+        """get name by path"""
+        media = self.session.query(MediaListDB).filter_by(path=media_path).one_or_none()
         if media:
-            self.session.delete(media)
-            self.session.commit()
+            return media.name
+
+        return None
 
     def update(self, vid, name=None, priority=None, played=None, failed=None, jumped=None):
         """update"""
@@ -104,9 +107,9 @@ class MediaList:
         """update_name"""
         self.update(vid, name=name)
 
-    def update_priority(self, vid, action='add'):
+    def update_priority(self, media_id, action='add'):
         """update priortity"""
-        media = self.session.query(MediaListDB).filter_by(id=vid).one_or_none()
+        media = self.session.query(PlayInfo).filter_by(media_id=media_id).one_or_none()
         if media:
             raw_priority = media.priority
 
@@ -117,25 +120,33 @@ class MediaList:
                     priority = raw_priority - 1
                 else:
                     priority = 0
-            self.update(vid, priority=priority)
+            self.update(media_id, priority=priority)
+        else:
+            raise
 
-    def increase_fail_count(self, vid):
+    def increase_fail_count(self, media_id):
         """increate_fail_count"""
-        media = self.session.query(MediaListDB).filter_by(id=vid).one_or_none()
+        media = self.session.query(PlayInfo).filter_by(media_id=media_id).one_or_none()
         if media:
-            self.update(vid, failed=media.failed + 1)
+            self.update(media_id, failed=media.failed + 1)
+        else:
+            raise
 
-    def increase_play_count(self, vid):
+    def increase_play_count(self, media_id):
         """increate play count"""
-        media = self.session.query(MediaListDB).filter_by(id=vid).one_or_none()
+        media = self.session.query(PlayInfo).filter_by(media_id=media_id).one_or_none()
         if media:
-            self.update(vid, played=media.played + 1)
+            self.update(media_id, played=media.played + 1)
+        else:
+            raise
 
-    def increase_jump_count(self, vid):
+    def increase_jump_count(self, media_id):
         """increase jump count"""
-        media = self.session.query(MediaListDB).filter_by(id=vid).one_or_none()
+        media = self.session.query(PlayInfo).filter_by(media_id=media_id).one_or_none()
         if media:
-            self.update(vid, jumped=media.jumped + 1)
+            self.update(media_id, jumped=media.jumped + 1)
+        else:
+            raise
 
     @staticmethod
     def show_info(medias):
@@ -167,14 +178,6 @@ class MediaList:
         LOG.debug('pick a random one `%s`', all_media[random_select])
 
         return all_media[random_select]
-
-    def get_name_by_path(self, media_path):
-        """get name by path"""
-        media = self.session.query(MediaListDB).filter_by(path=media_path).one_or_none()
-        if media:
-            return media.name
-
-        return None
 
     def find_new_to_add(self, contents):
         """find new to add"""
