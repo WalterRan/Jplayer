@@ -24,3 +24,9 @@ sed -i 's/geteuid/getppid/' /usr/bin/vlc
 
 # Build rpm
 python3 setup.py bdist_rpm
+
+# Pylint
+pylint -rn *.py
+
+# database
+create database sparrow_player;
