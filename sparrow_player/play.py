@@ -6,6 +6,7 @@ import media_list
 import nfs
 import hot_key
 from player import player
+from configparser import ConfigParser
 
 
 LOG = logging.get_logger(__name__)
@@ -36,7 +37,7 @@ def test_for_database():
     media_path = 'path' + str(r)
 
     m = media_list.MediaList()
-    m.create(path=media_path, name=media_name)
+    m.add(path=media_path, name=media_name)
 
     vid = m.get_id_by_path(media_path)
     m.increase_fail_count(vid)
@@ -96,7 +97,17 @@ def main():
         # LOG.debug(contents)
 
         # 2. update database
-        all_medias = media_list.MediaList(CONFIG_FILE)
+        cfg = ConfigParser()
+        cfg.read(CONFIG_FILE)
+
+        db_config = cfg.__getitem__('database')
+
+        server_ip = db_config.get('ip')
+        username = db_config.get('username')
+        db_name = db_config.get('db_name')
+        # password = cs.get('password')
+
+        all_medias = media_list.MediaList(server_ip, username, db_name)
         all_medias.find_new_to_add(contents)
 
         # 3. bind hotkey
