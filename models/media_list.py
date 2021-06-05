@@ -63,5 +63,6 @@ class MediaInfo(Base):
     simple_name = Column(String(255), nullable=True)
     origin_name = Column(String(255), nullable=True)
     year = Column(String(8), nullable=True)
+
     media_id = Column(Integer, ForeignKey('base_info.id'))
     base_info = relationship("BaseInfo", back_populates="media_info")
