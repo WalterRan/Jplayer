@@ -6,6 +6,7 @@ import sqlalchemy as sa
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import exc
 from prettytable import PrettyTable
 from models.media_list import BaseInfo
 from models.media_list import PlayInfo
@@ -80,12 +81,20 @@ class MediaList:
     # should called get title by path
     def get_name_by_path(self, media_path):
         """get name by path"""
-        media = self.session.query(BaseInfo).filter_by(path=media_path).one_or_none()
-        if media:
-            origin_name = media.media_info.origin_name + '.' if media.media_info.origin_name is not None else ''
+        try:
+            media = self.session.query(BaseInfo).filter_by(path=media_path).one()
+            origin_name = media.media_info.origin_name + '.' if media.media_info.origin_name else ''
+
             return origin_name + media.media_info.simple_name + '.' + media.media_info.year
 
-        return None
+        except exc.NoResultFound as e:
+            LOG.debug('no result found %s', e)
+            return
+
+        except exc.MultipleResultsFound as e:
+            LOG.debug('Error: ', e)
+            print('Error: ', e)
+            return None
 
     # TODO modify to get_random_one by priority
     def get_list_all(self):
@@ -94,70 +103,71 @@ class MediaList:
 
         return list_all
 
-    def update(self, vid, name=None, priority=None, played=None, failed=None, jumped=None):
+    def update(self, media_id,
+               path=None,
+               priority=None, played=None, finished=None, jumped=None,
+               simple_name=None, origin_name=None, year=None):
         """update"""
-        media = self.session.query(MediaListDB).filter_by(id=vid).one_or_none()
-        if media:
-            if name:
-                media.name = name
-            if priority:
-                media.priority = priority
+        try:
+            with self.session.begin(subtransactions=True):
+                media = self.session.query(BaseInfo).filter_by(id=media_id).one()
 
-            if played:
-                media.played = played
+                if path:
+                    media.path = path
 
-            if failed:
-                media.failed = failed
+                if priority:
+                    media.play_info.priority = priority
 
-            if jumped:
-                media.jumped = jumped
+                if played:
+                    media.media_info.played = played
 
-            self.session.commit()
+                if finished:
+                    media.media_info.finished = finished
 
-    def update_name(self, vid, name):
-        """update_name"""
-        self.update(vid, name=name)
+                if jumped:
+                    media.media_info.jumped = jumped
 
-    def update_priority(self, media_id, action='add'):
-        """update priortity"""
-        media = self.session.query(PlayInfo).filter_by(media_id=media_id).one_or_none()
-        if media:
-            raw_priority = media.priority
+                if simple_name:
+                    media.play_info.simple_name = simple_name
 
-            if action == 'add':
-                priority = raw_priority + 1
-            else:
-                if raw_priority > 0:
-                    priority = raw_priority - 1
-                else:
-                    priority = 0
-            self.update(media_id, priority=priority)
-        else:
-            raise
+                if origin_name:
+                    media.play_info.origin_name = origin_name
 
-    def increase_fail_count(self, media_id):
-        """increate_fail_count"""
-        media = self.session.query(PlayInfo).filter_by(media_id=media_id).one_or_none()
-        if media:
-            self.update(media_id, failed=media.failed + 1)
-        else:
-            raise
+                if year:
+                    media.play_info.year = year
 
-    def increase_play_count(self, media_id):
-        """increate play count"""
-        media = self.session.query(PlayInfo).filter_by(media_id=media_id).one_or_none()
-        if media:
-            self.update(media_id, played=media.played + 1)
-        else:
-            raise
+        except exc.NoResultFound as e:
+            LOG.debug('no result found %s', e)
+            return
 
-    def increase_jump_count(self, media_id):
-        """increase jump count"""
-        media = self.session.query(PlayInfo).filter_by(media_id=media_id).one_or_none()
-        if media:
-            self.update(media_id, jumped=media.jumped + 1)
-        else:
-            raise
+        except exc.MultipleResultsFound as e:
+            LOG.debug('Error: ', e)
+            print('Error: ', e)
+            return None
+
+    def update_path(self, media_id, path):
+        self.update(media_id, path=path)
+
+    def update_priority(self, media_id, priority):
+        self.update(media_id, priority=priority)
+
+    def update_played(self, media_id, played):
+        self.update(media_id, played=played)
+
+    def update_finished(self, media_id, finished):
+        self.update(media_id, finished=finished)
+
+    def update_jumped(self, media_id, jumped):
+        self.update(media_id, jumped=jumped)
+
+    def update_simple_name(self, media_id, simple_name):
+        self.update(media_id, simple_name=simple_name)
+
+    def update_origin_name(self, media_id, origin_name):
+        self.update(media_id, origin_name=origin_name)
+
+    def update_year(self, media_id, year):
+        self.update(media_id, year=year)
 
     @staticmethod
     def show_info(medias):
