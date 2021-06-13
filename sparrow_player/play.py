@@ -26,38 +26,18 @@ def hotkey_jump():
     player.stop()
 
 
-def test_for_database():
-    """test for database"""
-    LOG.debug('in test')
-    # Test
-    import random
-
-    r = random.randint(1, 10000)
-    media_name = 'name' + str(r)
-    media_path = 'path' + str(r)
-
-    m = media_list.MediaList()
-    m.add(path=media_path, name=media_name)
-
-    vid = m.get_id_by_path(media_path)
-    m.increase_fail_count(vid)
-    m.increase_play_count(vid)
-    m.increase_jump_count(vid)
-    # m.update_priority(vid)
-    m.update_priority(vid, action='low')
-    m.update_name(vid, 'a new name')
-
-    list_all = m.get_list_all()
-    for one in list_all:
-        # LOG.debug('-' * 20)
-        m.show_info(one)
-        # LOG.debug(one.name)
-        m.delete_by_id(one.id)
-
-
 def play():
     """play"""
-    all_medias = media_list.MediaList(CONFIG_FILE)
+    db_config = ConfigParser()
+    db_config.read(CONFIG_FILE)
+
+    db_config = db_config.__getitem__('database')
+
+    server_ip = db_config.get('ip')
+    username = db_config.get('username')
+    db_name = db_config.get('db_name')
+
+    all_medias = media_list.MediaList(server_ip, username, db_name)
 
     while True:
         one = all_medias.get_random()

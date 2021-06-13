@@ -1,8 +1,10 @@
 """media list"""
-import random
-from configparser import ConfigParser
+import sys
+sys.path.append("/home/src/sparrow-player")
+sys.path.append("/home/src/sparrow-player/sparrow_player")
 
-import sqlalchemy as sa
+import random
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
@@ -27,16 +29,6 @@ class MediaList:
     def __init__(self, server_ip, username, db_name):
         LOG.debug('MediaList init start')
 
-        # cfg = ConfigParser()
-        # cfg.read(config_file)
-
-        # db_config = cfg.__getitem__('database')
-
-        # server_ip = db_config.get('ip')
-        # username = db_config.get('username')
-        # db_name = db_config.get('db_name')
-        # password = cs.get('password')
-
         connection = 'mysql+pymysql://' + username + '@' + server_ip + '/' + db_name
         LOG.debug('connection = %s', connection)
         engine = create_engine(connection, pool_recycle=3600)
@@ -54,6 +46,19 @@ class MediaList:
             media.media_info = MediaInfo(simple_name=simple_name, origin_name=origin_name, year=year)
 
             self.session.add(media)
+
+    def get_by_id(self, media_id):
+        try:
+            return self.session.query(BaseInfo).filter_by(id=media_id).one()
+
+        except exc.NoResultFound as e:
+            LOG.debug('no result found %s', e)
+            return
+
+        except exc.MultipleResultsFound as e:
+            LOG.debug('Error: ', e)
+            print('Error: ', e)
+            return None
 
     def get_id_by_path(self, media_path):
         """get id by path"""
@@ -83,9 +88,32 @@ class MediaList:
         """get name by path"""
         try:
             media = self.session.query(BaseInfo).filter_by(path=media_path).one()
-            origin_name = media.media_info.origin_name + '.' if media.media_info.origin_name else ''
 
-            return origin_name + media.media_info.simple_name + '.' + media.media_info.year
+            '''
+            sep = '.'
+            full_name = [media.media_info.origin_name,
+                         media.media_info.simple_name,
+                         media.media_info.year]
+
+            not_none_name = [str(full_name).strip() for f in full_name if f]
+            return sep.join(not_none_name)
+            '''
+
+            name = str()
+            if media.media_info.origin_name:
+                name += media.media_info.origin_name
+
+            if media.media_info.simple_name:
+                if name:
+                    name += '.'
+                name += media.media_info.simple_name
+
+            if media.media_info.year:
+                if name:
+                    name += '.'
+                name += '.' + media.media_info.year
+
+            return name
 
         except exc.NoResultFound as e:
             LOG.debug('no result found %s', e)
@@ -195,7 +223,7 @@ class MediaList:
 
         all_media = []
         for media in medias:
-            for i in range(media.priority):
+            for i in range(media.play_info.priority):
                 all_media.append(media.path)
 
         LOG.debug('unfold media %d to medias %d', len(medias), len(all_media))
@@ -207,8 +235,8 @@ class MediaList:
     def find_new_to_add(self, contents):
         """find new to add"""
         for content in contents:
-            vid = self.get_id_by_path(content)
-            if vid:
+            media_id = self.get_id_by_path(content)
+            if media_id:
                 pass
             else:
                 self.add(path=content)
