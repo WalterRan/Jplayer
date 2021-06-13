@@ -56,7 +56,13 @@ class DatabaseTestCase(unittest.TestCase):
         pass
 
     def test_update_path(self):
-        pass
+        medias = self.session.get_list_all()
+        media = medias[0]
+        modify_path = 'the test path string'
+
+        self.session.update_path(media.id, modify_path)
+        get_media = self.session.get_by_id(media.id)
+        self.assertEqual(get_media.path, modify_path)
 
     def test_update_priority(self):
         pass

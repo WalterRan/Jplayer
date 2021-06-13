@@ -45,7 +45,7 @@ class Player:
             # self.add_callback(265, self.stop())
             self.media.play()
             time.sleep(1)
-            LOG.debug('media total length %s', self.get_length())
+            LOG.debug('media %s total length %s', uri, self.get_length())
 
     def pause(self):
         """pause"""
@@ -142,7 +142,12 @@ class Player:
 
     def update_text(self, content):
         """update text"""
-        self.media.video_set_marquee_string(vlc.VideoMarqueeOption.Text, content)
+        try:
+            LOG.debug('update title: %s', content)
+            self.media.video_set_marquee_string(vlc.VideoMarqueeOption.Text, content)
+
+        except Exception as e:
+            LOG.exception('update_text exception: ', e)
 
 
 player = Player()
