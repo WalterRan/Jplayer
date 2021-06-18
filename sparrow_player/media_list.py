@@ -71,16 +71,14 @@ class MediaList:
 
     def delete_by_id(self, media_id):
         """delete by id"""
-        media = self.session.query(BaseInfo).filter_by(id=media_id).one_or_none()
-        if media:
-            self.session.delete(media)
-            self.session.commit()
-        else:
-            raise
+        with self.session.begin(subtransactions=True):
+            self.session.query(BaseInfo).filter_by(id=media_id).delete()
 
     def delete_all(self):
         """delete all for unit test"""
         with self.session.begin(subtransactions=True):
+            self.session.query(MediaInfo).delete()
+            self.session.query(PlayInfo).delete()
             self.session.query(BaseInfo).delete()
 
     # should called get title by path
@@ -111,7 +109,7 @@ class MediaList:
             if media.media_info.year:
                 if name:
                     name += '.'
-                name += '.' + media.media_info.year
+                name += media.media_info.year
 
             return name
 
@@ -125,15 +123,13 @@ class MediaList:
             return None
 
     # TODO modify to get_random_one by priority
-    def get_list_all(self):
-        """get list all"""
-        list_all = self.session.query(BaseInfo).all()
-
-        return list_all
+    def get_all(self):
+        """get all medias"""
+        return self.session.query(BaseInfo).all()
 
     def update(self, media_id,
                path=None,
-               priority=None, played=None, finished=None, jumped=None,
+               priority=None,
                simple_name=None, origin_name=None, year=None):
         """update"""
         try:
@@ -146,23 +142,14 @@ class MediaList:
                 if priority:
                     media.play_info.priority = priority
 
-                if played:
-                    media.media_info.played = played
-
-                if finished:
-                    media.media_info.finished = finished
-
-                if jumped:
-                    media.media_info.jumped = jumped
-
                 if simple_name:
-                    media.play_info.simple_name = simple_name
+                    media.media_info.simple_name = simple_name
 
                 if origin_name:
-                    media.play_info.origin_name = origin_name
+                    media.media_info.origin_name = origin_name
 
                 if year:
-                    media.play_info.year = year
+                    media.media_info.year = year
 
         except exc.NoResultFound as e:
             LOG.debug('no result found %s', e)
@@ -179,15 +166,6 @@ class MediaList:
     def update_priority(self, media_id, priority):
         self.update(media_id, priority=priority)
 
-    def update_played(self, media_id, played):
-        self.update(media_id, played=played)
-
-    def update_finished(self, media_id, finished):
-        self.update(media_id, finished=finished)
-
-    def update_jumped(self, media_id, jumped):
-        self.update(media_id, jumped=jumped)
-
     def update_simple_name(self, media_id, simple_name):
         self.update(media_id, simple_name=simple_name)
 
@@ -196,6 +174,22 @@ class MediaList:
 
     def update_year(self, media_id, year):
         self.update(media_id, year=year)
+
+    def increase_played(self, media_id):
+        with self.session.begin(subtransactions=True):
+            media = self.session.query(BaseInfo).filter_by(id=media_id).one
+            import pdb; pdb.set_trace()
+            media.play_info.played += 1
+
+    def increase_finished(self, media_id):
+        with self.session.begin(subtransactions=True):
+            media = self.session.query(BaseInfo).filter_by(id=media_id).one
+            media.play_info.finished += 1
+
+    def increase_jumped(self, media_id):
+        with self.session.begin(subtransactions=True):
+            media = self.session.query(BaseInfo).filter_by(id=media_id).one
+            media.play_info.jumped += 1
 
     @staticmethod
     def show_info(medias):
@@ -217,9 +211,16 @@ class MediaList:
             ])
         LOG.debug(table)
 
+    def unfold_by_priority(self):
+        medias = self.session.query(BaseInfo).all()
+        print(medias)
+
+    def get_random_new(self):
+        self.unfold_by_priority()
+
     def get_random(self):
         """get random"""
-        medias = self.get_list_all()
+        medias = self.get_all()
 
         all_media = []
         for media in medias:
