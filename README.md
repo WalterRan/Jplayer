@@ -12,6 +12,7 @@ yum install python-devel -y
 yum install python3-pip -y
 yum install python3-devel -y
 
+pip3 install tox
 pip3 install python-vlc pynput flask python-xlib system_hotkey prettytable pymysql sqlalchemy alembic
 pip3 install pylint
 
