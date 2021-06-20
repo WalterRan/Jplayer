@@ -40,7 +40,7 @@ def play():
     all_medias = media_list.MediaList(server_ip, username, db_name)
 
     while True:
-        one = all_medias.get_random()
+        one = all_medias.get_random_media_path()
         content = NFS_LOCAL_PATH + one
         name = all_medias.get_name_by_path(one)
 
