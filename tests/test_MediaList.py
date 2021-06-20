@@ -3,9 +3,7 @@
 import unittest
 import random
 import sys
-sys.path.append("/home/src/sparrow-player")
-sys.path.append("/home/src/sparrow-player/sparrow_player")
-
+sys.path.append(".")
 
 from sparrow_player.media_list import MediaList
 
