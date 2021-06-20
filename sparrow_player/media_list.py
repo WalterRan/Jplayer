@@ -3,8 +3,7 @@ import sys
 import os
 import random
 
-sys.path.append("/home/src/sparrow-player")
-sys.path.append("/home/src/sparrow-player/sparrow_player")
+sys.path.append(".")
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -14,7 +13,7 @@ from prettytable import PrettyTable
 from models.media_list import BaseInfo
 from models.media_list import PlayInfo
 from models.media_list import MediaInfo
-import logging_adaptor as logging
+from sparrow_player import logging_adaptor as logging
 
 
 LOG = logging.get_logger(__name__)
