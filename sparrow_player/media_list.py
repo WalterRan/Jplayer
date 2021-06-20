@@ -1,9 +1,10 @@
 """media list"""
 import sys
+import os
+import random
+
 sys.path.append("/home/src/sparrow-player")
 sys.path.append("/home/src/sparrow-player/sparrow_player")
-
-import random
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -37,7 +38,6 @@ class MediaList:
 
     def remove(self):
         self.session.close()
-        # self.session.close_all()
 
     def add(self, path, simple_name='', origin_name='', year=''):
         with self.session.begin(subtransactions=True):
@@ -106,6 +106,9 @@ class MediaList:
                     name += '.'
                 name += media.media_info.simple_name
 
+            if not name:
+                return os.path.splitext(os.path.basename(media_path))[0]
+
             if media.media_info.year:
                 if name:
                     name += '.'
@@ -122,15 +125,10 @@ class MediaList:
             print('Error: ', e)
             return None
 
-    # TODO modify to get_random_one by priority
-    def get_all(self):
-        """get all medias"""
-        return self.session.query(BaseInfo).all()
-
-    def update(self, media_id,
-               path=None,
-               priority=None,
-               simple_name=None, origin_name=None, year=None):
+    def _update(self, media_id,
+                path=None,
+                priority=None,
+                simple_name=None, origin_name=None, year=None):
         """update"""
         try:
             with self.session.begin(subtransactions=True):
@@ -161,35 +159,34 @@ class MediaList:
             return None
 
     def update_path(self, media_id, path):
-        self.update(media_id, path=path)
+        self._update(media_id, path=path)
 
     def update_priority(self, media_id, priority):
-        self.update(media_id, priority=priority)
+        self._update(media_id, priority=priority)
 
     def update_simple_name(self, media_id, simple_name):
-        self.update(media_id, simple_name=simple_name)
+        self._update(media_id, simple_name=simple_name)
 
     def update_origin_name(self, media_id, origin_name):
-        self.update(media_id, origin_name=origin_name)
+        self._update(media_id, origin_name=origin_name)
 
     def update_year(self, media_id, year):
-        self.update(media_id, year=year)
+        self._update(media_id, year=year)
 
     def increase_played(self, media_id):
         with self.session.begin(subtransactions=True):
-            media = self.session.query(BaseInfo).filter_by(id=media_id).one
-            import pdb; pdb.set_trace()
-            media.play_info.played += 1
+            play_info = self.session.query(PlayInfo).filter_by(media_id=media_id).one()
+            play_info.played += 1
 
     def increase_finished(self, media_id):
         with self.session.begin(subtransactions=True):
-            media = self.session.query(BaseInfo).filter_by(id=media_id).one
-            media.play_info.finished += 1
+            play_info = self.session.query(PlayInfo).filter_by(media_id=media_id).one()
+            play_info.finished += 1
 
     def increase_jumped(self, media_id):
         with self.session.begin(subtransactions=True):
-            media = self.session.query(BaseInfo).filter_by(id=media_id).one
-            media.play_info.jumped += 1
+            play_info = self.session.query(PlayInfo).filter_by(media_id=media_id).one()
+            play_info.jumped += 1
 
     @staticmethod
     def show_info(medias):
@@ -211,27 +208,29 @@ class MediaList:
             ])
         LOG.debug(table)
 
-    def unfold_by_priority(self):
-        medias = self.session.query(BaseInfo).all()
-        print(medias)
-
-    def get_random_new(self):
-        self.unfold_by_priority()
-
-    def get_random(self):
-        """get random"""
-        medias = self.get_all()
+    def get_random_media_id(self):
+        medias = self.session.query(BaseInfo.id, PlayInfo.priority).join(PlayInfo).all()
 
         all_media = []
         for media in medias:
-            for i in range(media.play_info.priority):
-                all_media.append(media.path)
-
+            for i in range(media.priority):
+                all_media.append(media.id)
         LOG.debug('unfold media %d to medias %d', len(medias), len(all_media))
-        random_select = random.randint(0, len(all_media))
-        LOG.debug('pick a random one `%s`', all_media[random_select])
 
-        return all_media[random_select]
+        random_index = random.randint(0, len(all_media)-1)
+
+        return all_media[random_index]
+
+    def get_random_media_path(self):
+        random_select = self.get_random_media_id()
+
+        random_media_path = self.session.query(BaseInfo.path)\
+            .filter_by(id=random_select)\
+            .one()
+
+        LOG.debug('pick a random one `%s`, NO: %d', random_media_path, random_select)
+
+        return str(getattr(random_media_path, 'path'))
 
     def find_new_to_add(self, contents):
         """find new to add"""
@@ -241,3 +240,6 @@ class MediaList:
                 pass
             else:
                 self.add(path=content)
+
+    def get_medias_count(self):
+        return self.session.query(BaseInfo).count()
