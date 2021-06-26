@@ -51,25 +51,25 @@ class DatabaseTestCase(unittest.TestCase):
         """
         # origin-name | simple-name | year
         self.assertEqual(
-            self.media_list.get_name_by_path('/home/media/The.Shawshank.Redemption.mkv'),
+            self.media_list.get_media_title_by_path('/home/media/The.Shawshank.Redemption.mkv'),
             'The Shawshank Redemption.肖生克的救赎.1994'
         )
 
         # no origin-name | simple-name | year
         self.assertEqual(
-            self.media_list.get_name_by_path('/home/media/simple-name-only.mp4'),
+            self.media_list.get_media_title_by_path('/home/media/simple-name-only.mp4'),
             'the simple name.2000'
         )
 
         # origin-name | no simple-name | year
         self.assertEqual(
-            self.media_list.get_name_by_path('/home/media/origin-name-only.mp4'),
+            self.media_list.get_media_title_by_path('/home/media/origin-name-only.mp4'),
             'the origin name.2000'
         )
 
         # no origin-name | no simple-name | no year
         self.assertEqual(
-            self.media_list.get_name_by_path('/home/media/neither-origin-simple-name.mp4'),
+            self.media_list.get_media_title_by_path('/home/media/neither-origin-simple-name.mp4'),
             'neither-origin-simple-name'
         )
 

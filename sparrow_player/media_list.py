@@ -1,10 +1,13 @@
 """media list"""
-import sys
 import os
 import random
 
-sys.path.append(".")
+import sys
+from os.path import abspath, dirname
+sys.path.append(dirname(dirname(abspath(__file__))))
 
+import utils
+from configparser import ConfigParser
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
@@ -23,11 +26,29 @@ Base = declarative_base()
 DEFAULT_PRIORITY = 5
 
 
-class MediaList:
+class MediaList(object):
     """media list class"""
+    _instance = None
 
-    def __init__(self, server_ip, username, db_name):
-        LOG.debug('MediaList init start')
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            LOG.debug('Creating the `MediaList` object')
+            cls._instance = super(MediaList, cls).__new__(cls)
+            # Put any initialization here.
+        return cls._instance
+
+    # TODO: the only use of these parameters is for unit test, should try to remove them next time.
+    def __init__(self, server_ip=None, username=None, db_name=None):
+        if not (server_ip and username and db_name):
+            config_file = utils.get_config_file()
+            db_config = ConfigParser()
+            db_config.read(config_file)
+
+            db_config = db_config.__getitem__('database')
+
+            server_ip = db_config.get('ip')
+            username = db_config.get('username')
+            db_name = db_config.get('db_name')
 
         connection = 'mysql+pymysql://' + username + '@' + server_ip + '/' + db_name
         LOG.debug('connection = %s', connection)
@@ -81,7 +102,7 @@ class MediaList:
             self.session.query(BaseInfo).delete()
 
     # should called get title by path
-    def get_name_by_path(self, media_path):
+    def get_media_title_by_path(self, media_path):
         """get name by path"""
         try:
             media = self.session.query(BaseInfo).filter_by(path=media_path).one()
@@ -148,6 +169,9 @@ class MediaList:
                 if year:
                     media.media_info.year = year
 
+            # why need this?
+            self.session.commit()
+
         except exc.NoResultFound as e:
             LOG.debug('no result found %s', e)
             return
@@ -173,19 +197,19 @@ class MediaList:
         self._update(media_id, year=year)
 
     def increase_played(self, media_id):
-        with self.session.begin(subtransactions=True):
-            play_info = self.session.query(PlayInfo).filter_by(media_id=media_id).one()
-            play_info.played += 1
+        play_info = self.session.query(PlayInfo).filter_by(media_id=media_id).one()
+        play_info.played += 1
+        self.session.commit()
 
     def increase_finished(self, media_id):
-        with self.session.begin(subtransactions=True):
-            play_info = self.session.query(PlayInfo).filter_by(media_id=media_id).one()
-            play_info.finished += 1
+        play_info = self.session.query(PlayInfo).filter_by(media_id=media_id).one()
+        play_info.finished += 1
+        self.session.commit()
 
     def increase_jumped(self, media_id):
-        with self.session.begin(subtransactions=True):
-            play_info = self.session.query(PlayInfo).filter_by(media_id=media_id).one()
-            play_info.jumped += 1
+        play_info = self.session.query(PlayInfo).filter_by(media_id=media_id).one()
+        play_info.jumped += 1
+        self.session.commit()
 
     @staticmethod
     def show_info(medias):
@@ -242,3 +266,12 @@ class MediaList:
 
     def get_medias_count(self):
         return self.session.query(BaseInfo).count()
+
+
+def main():
+    import pdb; pdb.set_trace()
+    # a.MediaList('127.0.0.1', 'root', 'sparrow_player')
+
+
+if __name__ == '__main__':
+    main()
