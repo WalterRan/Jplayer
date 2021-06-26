@@ -45,7 +45,7 @@ class MediaList(object):
 
         connection = 'mysql+pymysql://' + username + '@' + server_ip + '/' + db_name
         LOG.debug('connection = %s', connection)
-        engine = create_engine(connection)
+        engine = create_engine(connection, pool_recycle=3600)
         db_session = sessionmaker(bind=engine)
         self.session = db_session()
 
