@@ -6,7 +6,6 @@ import sys
 from os.path import abspath, dirname
 sys.path.append(dirname(dirname(abspath(__file__))))
 
-import utils
 from configparser import ConfigParser
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -17,6 +16,7 @@ from models.media_list import BaseInfo
 from models.media_list import PlayInfo
 from models.media_list import MediaInfo
 from sparrow_player import logging_adaptor as logging
+from sparrow_player import utils
 
 
 LOG = logging.get_logger(__name__)
@@ -138,12 +138,12 @@ class MediaList(object):
 
         except exc.NoResultFound as e:
             LOG.debug('no result found %s', e)
-            return
+            return ''
 
         except exc.MultipleResultsFound as e:
             LOG.debug('Error: ', e)
             print('Error: ', e)
-            return None
+            return ''
 
     def _update(self, media_id,
                 path=None,
