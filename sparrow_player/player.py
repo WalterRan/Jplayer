@@ -3,9 +3,27 @@ import os
 import time
 import datetime
 import vlc
-import logging_adaptor as logging
+from sparrow_player import logging_adaptor as logging
 
 LOG = logging.get_logger(__name__)
+
+
+SUPPORT_EXTENSION = (
+    '.avi',
+    '.mkv',
+    '.mp4',
+    '.rmvb',
+    '.vob',
+    '.mpg',
+    '.m2v',
+    '.mpeg',
+    '.flv',
+    '.ts',
+    '.f4v',
+    '.m4v',
+    '.dat',
+    '.asx'
+)
 
 
 class Player:
@@ -21,20 +39,29 @@ class Player:
         """test interface"""
         self.play('a.avi', title='testing', fullscreen=False)
 
-    def play(self, media, title=None, fullscreen=True):
+    @staticmethod
+    def support_file_type(media_full_path):
+        if media_full_path.lower().endswith(SUPPORT_EXTENSION):
+            return True
+
+        return False
+
+    def play(self, media_full_path, title=None, fullscreen=True):
         """play"""
-        if media:
+        if media_full_path and self.support_file_type(media_full_path):
             if fullscreen:
                 self.set_fullscreen()
 
             self.set_marquee()
-            title = title or os.path.splitext(os.path.basename(media))[0]
             self.update_text(title)
 
-            self.do_play(media)
+            self.do_play(media_full_path)
             time.sleep(2)
             while self.is_playing():
                 time.sleep(1)
+
+        else:
+            LOG.warning('cannot support the media file type: %s', media_full_path)
 
     def do_play(self, uri):
         """do play"""
