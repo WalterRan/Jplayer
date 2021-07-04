@@ -1,5 +1,5 @@
 """player module"""
-import os
+
 import time
 import datetime
 import vlc

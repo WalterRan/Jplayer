@@ -5,9 +5,13 @@ Revises: d3c4e42d95db
 Create Date: 2021-05-29 06:04:13.598507
 
 """
+import sys
+from os.path import abspath, dirname
+sys.path.append(dirname(dirname(dirname(abspath(__file__)))))
+
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.dialects import mysql
+
 from sqlalchemy import orm
 from sqlalchemy import Column, String, Integer
 from sqlalchemy.ext.declarative import declarative_base
